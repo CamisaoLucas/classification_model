@@ -1,29 +1,34 @@
-# Imagem base enxuta com Python 3.11
+# -----------------------------
+# Dockerfile para classificação de imagens com ResNet50
+# -----------------------------
+
+# Imagem base
 FROM python:3.11-slim
 
-# Variáveis de ambiente para reduzir logs do TF e matplotlib headless
-ENV TF_CPP_MIN_LOG_LEVEL=2  
-#0=all, 1=info, 2=warnings, 3=errors
-ENV MPLBACKEND=Agg
+# Evitar buffers e reduzir logs do TensorFlow
+ENV PYTHONUNBUFFERED=1
+ENV TF_CPP_MIN_LOG_LEVEL=2
 
-# Diretório de trabalho
+# Diretório de trabalho dentro do container
 WORKDIR /app
 
-# Criar pasta de logs
-RUN mkdir -p /app/logs
+# Copiar arquivos do projeto para o container
+COPY model.py requirements.txt ./
 
-# Instalar dependências do sistema (necessárias para algumas libs como matplotlib)
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
-    libglib2.0-0 libsm6 libxrender1 libxext6 \
+    build-essential \
+    git \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar e instalar dependências Python
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+# Atualizar pip e instalar dependências do Python
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar restante do código
-COPY . .
+# Criar pastas para dataset e resultados
+RUN mkdir -p /app/dataset
+RUN mkdir -p /app/results
 
-# Comando padrão
+# Comando padrão para rodar o script
 CMD ["python", "model.py"]
